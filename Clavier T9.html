@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Convertisseur T9 vers Texte</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .keyboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .key {
+            background-color: #e0e0e0;
+            border: none;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .key:hover {
+            background-color: #d0d0d0;
+        }
+        .key .letters {
+            display: block;
+            font-size: 12px;
+            color: #666;
+        }
+        .input-area {
+            margin: 20px 0;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px 0;
+            resize: vertical;
+        }
+        button.clear {
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        button.clear:hover {
+            background-color: #ff2222;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Convertisseur T9 vers Texte</h1>
+        
+        <div class="keyboard">
+            <button class="key" onclick="addDigit('1')">1<span class="letters"></span></button>
+            <button class="key" onclick="addDigit('2')">2<span class="letters">ABC</span></button>
+            <button class="key" onclick="addDigit('3')">3<span class="letters">DEF</span></button>
+            <button class="key" onclick="addDigit('4')">4<span class="letters">GHI</span></button>
+            <button class="key" onclick="addDigit('5')">5<span class="letters">JKL</span></button>
+            <button class="key" onclick="addDigit('6')">6<span class="letters">MNO</span></button>
+            <button class="key" onclick="addDigit('7')">7<span class="letters">PQRS</span></button>
+            <button class="key" onclick="addDigit('8')">8<span class="letters">TUV</span></button>
+            <button class="key" onclick="addDigit('9')">9<span class="letters">WXYZ</span></button>
+            <button class="key" onclick="addSpace()">⎵<span class="letters">espace</span></button>
+            <button class="key" onclick="addDigit('0')">0<span class="letters"></span></button>
+            <button class="key" onclick="backspace()">←<span class="letters">retour</span></button>
+        </div>
+
+        <div class="input-area">
+            <h3>Séquence T9:</h3>
+            <textarea id="t9Input" rows="2" readonly></textarea>
+            <button class="clear" onclick="clearInput()">Effacer</button>
+            
+            <h3>Texte converti:</h3>
+            <textarea id="textOutput" rows="2" readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        const t9Dict = {
+            '2': 'abc', '3': 'def', '4': 'ghi', '5': 'jkl',
+            '6': 'mno', '7': 'pqrs', '8': 'tuv', '9': 'wxyz'
+        };
+
+        let currentSequence = '';
+        let lastDigit = '';
+        let digitCount = 0;
+        let lastDigitTime = 0;
+
+        function t9ToText(sequence) {
+            const groups = sequence.split(' ');
+            let result = '';
+            
+            for (const group of groups) {
+                if (!group) continue;
+                
+                if (group[0] in t9Dict) {
+                    const letterGroup = t9Dict[group[0]];
+                    const position = group.length - 1;
+                    if (position < letterGroup.length) {
+                        result += letterGroup[position];
+                    }
+                }
+            }
+            
+            return result;
+        }
+
+        function addDigit(digit) {
+            const now = Date.now();
+            
+            if (digit === lastDigit && (now - lastDigitTime) < 1500) {
+                // Même touche pressée rapidement : on incrémente le compteur
+                currentSequence = currentSequence.slice(0, -1);
+                digitCount = (digitCount + 1) % t9Dict[digit].length;
+                currentSequence += digit.repeat(digitCount + 1);
+            } else {
+                // Nouvelle touche ou trop de temps écoulé
+                if (currentSequence && currentSequence[currentSequence.length - 1] !== ' ') {
+                    currentSequence += ' ';
+                }
+                currentSequence += digit;
+                digitCount = 0;
+            }
+            
+            lastDigit = digit;
+            lastDigitTime = now;
+            updateDisplay();
+        }
+
+        function addSpace() {
+            if (currentSequence && currentSequence[currentSequence.length - 1] !== ' ') {
+                currentSequence += ' ';
+                updateDisplay();
+            }
+        }
+
+        function backspace() {
+            if (currentSequence.length > 0) {
+                if (currentSequence[currentSequence.length - 1] === ' ') {
+                    currentSequence = currentSequence.slice(0, -1);
+                }
+                currentSequence = currentSequence.slice(0, -1);
+                updateDisplay();
+            }
+        }
+
+        function clearInput() {
+            currentSequence = '';
+            lastDigit = '';
+            digitCount = 0;
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            document.getElementById('t9Input').value = currentSequence;
+            document.getElementById('textOutput').value = t9ToText(currentSequence);
+        }
+    </script>
+</body>
+</html>
